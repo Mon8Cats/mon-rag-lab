@@ -1,5 +1,42 @@
 # Ollama 
 
+## Use Local Model?
+
+- open source models are good
+- cheaper
+- privacy (no external APIs)
+- not depends on external connectivity
+- code is not important but the reasoning behind is important
+
+## Steps
+
+1. download ollama 
+   1. a model = a gigantic mathematical formula
+   2. ollama = the common wrapper (interface) around all of these different models
+   3. ollama site = a list of models
+   4. > ollama -> list commands
+   5. > ollama pull [model-name]
+   6. > ollama list -> list downloaded models
+   7. download model means download files (.ollama/)
+   8. ollama run [model-name]
+   9. >tell me a joke
+   10. > /bye or ctrl + d
+   11. create a fold to developer a rag system using Langchain to get data from PDF files
+   12. >mkdir local-model
+   13. >open vs-code
+   14. >add a jupyter plug in, python plug in, 
+   15. >create a notebook in the folder notebook.ipynb
+   16. >create a venv
+   17. local-model> python3 -m venv .venv # m = module
+   18. >source .venv/bin/activate
+   19. open the notebook> add a code in a cell > it asks to choose a kernel> choose the python env created (.venv). 
+   20. then it install ipykernel 
+   21. create an env file (.env file)
+   22. 
+
+
+
+
 ## Implement RAG with Lamma using Ollama and Langchain
 
 1. Install Ollama
