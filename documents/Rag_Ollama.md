@@ -1,4 +1,180 @@
-# Ollama 
+# RAG and Ollama 
+
+check these videos: https://www.youtube.com/@decoder-sh
+
+## 1. Set Environment
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+## 2. Install Dependencies
+
+```bash
+python -m pip install ollama numpy 
+```
+
+## 3. Check Ollama Functions
+
+```bash
+import ollama
+ollama.chat(model="mistral', messages=[
+    {'role':'user', 'content': 'Why is the sky blue?'}
+])
+=> response
+{
+    'model': 'mistral',
+    'created_at': '2024-12-27T17:47:18.7933792',
+    'message': 
+        {
+            'role': 'assistant',
+            'content': "..."}
+        },
+    'done': True,
+    'total_duration': 9781194708,
+    'load_duration': 7847796458,
+    'prompt_eval_count': 15, 
+    'prompt_eval_duration': 9669500,
+    'eval_count': 100,
+    'eval_duration': 1835609000
+}
+
+ollama.embeddings(model='mistral', prompt='The dog ran fast')
+=>
+```
+
+## 4. Prepare Data
+
+- Books in Project Gutenberg, download
+- Parse the documents
+- Embeddings
+
+```bash
+import ollama
+import time
+import os
+import json
+
+# main.py
+def parse_file(filename):
+    with open(filename, encoding="utf-8-sig") as f:
+        paragraphs = []
+        buffer = []
+        for line in f.readlines():
+            line = line.strip()
+            if line:
+                buffer.append(line)
+            elif len(buffer):
+                paragraphs.append((" ").join(buffer))
+                buffer = []
+        if len(buffer):
+            paragraphs.append((" ").join(buffer))
+        return paragraphs
+
+def save_embeddings(filename, embeddings):
+    # create dir if it doesn't exist
+    if not os.path.exists("embeddings"):
+        os.makedirs("embeddings")
+    # dump embeddings to json
+    with open(f"embeddings/{filename}.json", "w") as f:
+        json.dump(embeddings, f)
+
+def load_embeddings(filename):
+    # check if file exists
+    if not os.path.exists(f"embeddings/{filename}.json"):
+        return False
+    # load embeddings from json
+    with open(f"embeddings/{filename}.json", "r") as f:
+        return json.load(f)
+
+
+# old
+"""
+def get_embeddings(modelname, chunks):
+    return [
+        ollama.embeddings(model=modelname, prompt=chunk)["embedding"]
+        for chunk in chunks
+    ]
+"""
+
+# new
+def get_embeddings(filename, modelname, chunks):
+    # check if embeddings are already saved
+    if (embeddings := load_embeddings(filename)) is not False:
+        return embeddings
+
+    # get embeddings from ollama
+    embeddings = [
+        ollama.embeddings(model=modelname, prompt=chunk)["embedding"]
+        for chunk in chunks
+    ]
+
+    # save embeddings
+    save_embeddings(filename, embeddings)
+    return embeddings
+
+def find_most_similar(needle, haystack):
+    needle_norm = norm(needle)
+    similarity_score = [
+        np.dot(needle, item) / (needle_norm * norm (item)) for item in haystack
+    ]
+    return sorted(zip(similarity_scores, range(len(haystack))), reverse=True)
+
+def main():
+    SYSTEM_PROMPT = """You are a helpful reading assistant who answers questions
+        based on snippets of text provided in context. Answer only using the context provided, 
+        being as concise as possible. If you're unsure, just say that you don't know.
+        Context:
+    """
+
+
+    # open file
+    filename = "peter-pan.txt"
+    paragraphs = parse_file(filename)
+
+    # join multiple paragraphs to meet a minimum length (chunking function?)
+    # use different model
+
+    #start = time.perf_counter()
+    #embeddings = get_embeddings('mistral', paragraphs[5:90])
+    embeddings = get_embeddings(filename, "mistral", paragraphs)
+    #print(time.pert_counter() - start)
+    #print(paragraphs[:10])
+    #print(len(embeddings))
+
+    #prompt = "who is the story's primary villain?"
+    prompt = input("What do you want to know? -> ")
+    prompt_embedding = ollama.embeddings(model="mistral", prompt=prompt)[
+        "embedding"
+    ]
+    # find most similar embeddings?
+    most_similar_chunks = find_most_similar(prompt_embedding, embeddings)[:5]
+    #for item in most_similar_chunks:
+    #    print(item[0], paragraphs[item[1]]) # similarity score, paragraph
+
+    response = ollama.chat(
+        model="mistral",
+        messages=[
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT
+                + "\n".join(paragraphs[item[1]]) for item in most_similar_chunks),
+            },
+            {"role": "user", "content": prompt},
+
+        ],
+    )
+
+    print("\n\n")
+    print(response["message"]["content"])
+
+
+
+if __name__ == "__main__":
+    main()
+
+```
 
 ## Use Local Model?
 
